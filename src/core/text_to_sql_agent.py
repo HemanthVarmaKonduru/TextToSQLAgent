@@ -163,17 +163,20 @@ Valid Bikes Topics:
 SQL Generation Rules:
 1. Only return the SQL query, no explanations
 2. Use proper PostgreSQL syntax
-3. Include appropriate JOINs between bikes and bike_brands tables
+3. Query the single table: bike_information (no JOINs needed)
 4. Use meaningful column aliases for better readability
 5. Add LIMIT 100 if the query might return many rows
 6. Include ORDER BY when appropriate for meaningful results
-7. Use LOWER() function for case-insensitive brand/name comparisons
-8. Handle price comparisons carefully (prices may contain text like "₹" and commas)
+7. Use LOWER() and LIKE for case-insensitive text searches
+8. Handle price comparisons carefully using REGEXP_REPLACE to extract numbers
+9. For engine capacity searches, use LIKE with patterns like '%1000%' or '%1000cc%'
+10. Remember all columns are TEXT type, so use appropriate string functions
 
 Valid Bikes Query Examples:
-- "Show me all Ducati bikes" -> SELECT b.bike_name, b.engine_capacity, b.max_power, b.price, b.top_speed FROM bikes b JOIN bike_brands br ON b.brand_id = br.brand_id WHERE LOWER(br.brand_name) = 'ducati' ORDER BY b.bike_name LIMIT 100;
-- "Find bikes under 10 lakhs" -> SELECT b.bike_name, br.brand_name, b.price, b.engine_capacity FROM bikes b JOIN bike_brands br ON b.brand_id = br.brand_id WHERE b.price IS NOT NULL ORDER BY b.bike_name LIMIT 100;
-- "Which bikes have ABS?" -> SELECT b.bike_name, br.brand_name, b.engine_capacity, b.price FROM bikes b JOIN bike_brands br ON b.brand_id = br.brand_id WHERE b.abs_available = true ORDER BY br.brand_name, b.bike_name LIMIT 100;
+- "Show me all 1000CC bikes" -> SELECT bike_name, engine_capacity, max_power, price, top_speed FROM bike_information WHERE engine_capacity LIKE '1,0%cc' OR engine_capacity LIKE '1,1%cc' ORDER BY bike_name LIMIT 100;
+- "Find Ducati bikes" -> SELECT bike_name, engine_capacity, max_power, price, top_speed FROM bike_information WHERE LOWER(bike_name) LIKE '%ducati%' ORDER BY bike_name LIMIT 100;
+- "Show bikes under 10 lakhs" -> SELECT bike_name, engine_capacity, price, max_power FROM bike_information WHERE price IS NOT NULL AND CAST(REGEXP_REPLACE(price, '[^0-9]', '', 'g') AS BIGINT) < 1000000 ORDER BY CAST(REGEXP_REPLACE(price, '[^0-9]', '', 'g') AS BIGINT) LIMIT 100;
+- "Which bikes have disc brakes?" -> SELECT bike_name, front_brake_type, rear_brake_type, price FROM bike_information WHERE LOWER(front_brake_type) LIKE '%disc%' OR LOWER(rear_brake_type) LIKE '%disc%' ORDER BY bike_name LIMIT 100;
 
 Invalid Questions (DO NOT ANSWER):
 - General knowledge questions (presidents, capitals, history)

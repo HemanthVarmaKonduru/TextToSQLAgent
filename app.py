@@ -198,18 +198,18 @@ def process_query(agent, query, database_type):
                     with col1:
                         st.markdown("""
                         **Bike Information:**
-                        - Show me all Ducati bikes
-                        - Find bikes under 10 lakhs
-                        - Which bikes have ABS?
-                        - Show me bikes with mileage above 15 km/l
+                        - Show me all 1000CC bikes
+                        - Find all Ducati bikes
+                        - Show me bikes under 10 lakhs
+                        - Which bikes have the best mileage?
                         """)
                     with col2:
                         st.markdown("""
                         **Performance Analysis:**
                         - Find the most powerful bikes
                         - Show me electric bikes
-                        - Which bikes have the highest top speed?
-                        - Compare bikes by brand
+                        - Which bikes have disc brakes?
+                        - Find bikes by engine capacity
                         """)
             else:
                 st.error("❌ Error processing query")

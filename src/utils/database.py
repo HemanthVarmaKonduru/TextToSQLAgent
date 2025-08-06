@@ -101,31 +101,64 @@ class DatabaseManager:
         return """
         Bikes Database Schema:
         
-        1. bike_brands table:
-           - brand_id (Primary Key)
-           - brand_name (Brand name like Ducati, BMW, etc.)
+        Table: bike_information
+        Key columns for querying:
+        - bike_name (TEXT) - Full bike model name
+        - engine_capacity (TEXT) - Engine capacity (e.g., "999cc", "1000cc")
+        - transmission_x (TEXT) - Primary transmission info
+        - transmission_y (TEXT) - Secondary transmission info  
+        - transmission_type (TEXT) - Transmission type
+        - colors (TEXT) - Available colors
+        - price (TEXT) - Price (contains ₹ symbol and commas)
+        - displacement (TEXT) - Engine displacement
+        - max_power (TEXT) - Maximum power output
+        - max_torque (TEXT) - Maximum torque
+        - top_speed (TEXT) - Maximum speed
+        - cylinders (TEXT) - Number of cylinders
+        - fuel_type (TEXT) - Fuel type (Petrol/Electric/etc.)
+        - mileage (TEXT) - Fuel efficiency
+        - fuel_tank_capacity (TEXT) - Tank capacity
+        - kerb_weight (TEXT) - Weight
+        - seat_height (TEXT) - Seat height
+        - front_brake_type (TEXT) - Front brake type
+        - rear_brake_type (TEXT) - Rear brake type
+        - front_suspension (TEXT) - Front suspension
+        - rear_suspension (TEXT) - Rear suspension
+        - ground_clearance (TEXT) - Ground clearance
+        - wheelbase (TEXT) - Wheelbase
+        - overall_length (TEXT) - Overall length
+        - overall_width (TEXT) - Overall width
+        - overall_height (TEXT) - Overall height
+        - headlight_type (TEXT) - Headlight type
+        - start_type (TEXT) - Start mechanism
+        - tyre_type (TEXT) - Tyre type
+        - chassis_type (TEXT) - Chassis type
+        - cooling_system (TEXT) - Cooling system
+        - ignition (TEXT) - Ignition system
+        - gear_shifting_pattern (TEXT) - Gear pattern
+        - compression_ratio (TEXT) - Compression ratio
+        - bore (TEXT) - Engine bore
+        - stroke (TEXT) - Engine stroke
+        - valves_per_cylinder (TEXT) - Valves per cylinder
+        - clutch (TEXT) - Clutch type
+        - fuel_delivery_system (TEXT) - Fuel delivery
+        - emission_standard (TEXT) - Emission standard
+        - braking_system (TEXT) - Braking system
+        - front_brake_size (TEXT) - Front brake size
+        - rear_brake_size (TEXT) - Rear brake size
+        - calliper_type (TEXT) - Calliper type
+        - wheel_type (TEXT) - Wheel type
+        - front_wheel_size (TEXT) - Front wheel size
+        - rear_wheel_size (TEXT) - Rear wheel size
+        - front_tyre_size (TEXT) - Front tyre size
+        - rear_tyre_size (TEXT) - Rear tyre size
+        - additional_features (TEXT) - Additional features
         
-        2. bikes table:
-           - bike_id (Primary Key)
-           - bike_name (Full bike model name)
-           - brand_id (Foreign Key to bike_brands)
-           - engine_capacity (Engine displacement)
-           - transmission (Transmission type)
-           - colors (Available colors)
-           - price (Price in rupees)
-           - displacement (Engine displacement)
-           - max_power (Maximum power output)
-           - max_torque (Maximum torque)
-           - top_speed (Maximum speed)
-           - cylinders (Number of cylinders)
-           - fuel_type (Petrol/Electric)
-           - mileage (Fuel efficiency in km/l)
-           - fuel_tank_capacity (Tank capacity)
-           - kerb_weight (Weight in kg)
-           - seat_height (Seat height in mm)
-           - front_brake_type (Front brake type)
-           - rear_brake_type (Rear brake type)
-           - abs_available (ABS availability)
+        IMPORTANT NOTES:
+        - All columns are TEXT type, use LIKE for pattern matching
+        - For engine capacity queries like "1000CC bikes", use: WHERE engine_capacity LIKE '1,0%cc' OR engine_capacity LIKE '1,1%cc' (format is "1,103 cc")
+        - For price comparisons, extract numbers: CAST(REGEXP_REPLACE(price, '[^0-9]', '', 'g') AS BIGINT)
+        - For numeric comparisons on TEXT fields, use careful pattern matching
         
         Sample Bikes Queries:
         - Show me all Ducati bikes
@@ -161,13 +194,15 @@ class DatabaseManager:
             ]
         elif database_type == "bikes":
             return [
-                "Show me all Ducati bikes",
-                "Find bikes under 10 lakhs",
-                "Which bikes have ABS?",
-                "Show me bikes with mileage above 15 km/l",
+                "Show me all 1000CC bikes",
+                "Find all Ducati bikes",
+                "Show me bikes under 10 lakhs",
+                "Which bikes have the best mileage?",
                 "Find the most powerful bikes",
                 "Show me electric bikes",
-                "Which bikes have the highest top speed?"
+                "Which bikes have disc brakes?",
+                "Show bikes with good fuel efficiency",
+                "Find bikes by engine capacity"
             ]
         else:
             return []
@@ -197,18 +232,18 @@ class DatabaseManager:
                 stats['Average Price'] = int(avg_price) if avg_price else 0
                 
             elif database_type == "bikes":
-                cursor.execute("SELECT COUNT(*) FROM bikes")
+                cursor.execute("SELECT COUNT(*) FROM bike_information")
                 stats['Total Bikes'] = cursor.fetchone()[0]
                 
-                cursor.execute("SELECT COUNT(*) FROM bike_brands")
-                stats['Total Brands'] = cursor.fetchone()[0]
+                cursor.execute("SELECT COUNT(DISTINCT CASE WHEN bike_name LIKE '%Ducati%' THEN 'Ducati' WHEN bike_name LIKE '%BMW%' THEN 'BMW' WHEN bike_name LIKE '%Honda%' THEN 'Honda' WHEN bike_name LIKE '%Yamaha%' THEN 'Yamaha' WHEN bike_name LIKE '%KTM%' THEN 'KTM' END) FROM bike_information WHERE bike_name LIKE '%Ducati%' OR bike_name LIKE '%BMW%' OR bike_name LIKE '%Honda%' OR bike_name LIKE '%Yamaha%' OR bike_name LIKE '%KTM%'")
+                brands_count = cursor.fetchone()[0]
+                stats['Major Brands'] = brands_count if brands_count else 0
                 
-                cursor.execute("SELECT COUNT(*) FROM bikes WHERE abs_available = true")
-                stats['Bikes with ABS'] = cursor.fetchone()[0]
+                cursor.execute("SELECT COUNT(*) FROM bike_information WHERE LOWER(front_brake_type) LIKE '%disc%' OR LOWER(rear_brake_type) LIKE '%disc%'")
+                stats['Bikes with Disc Brakes'] = cursor.fetchone()[0]
                 
-                cursor.execute("SELECT AVG(mileage) FROM bikes WHERE mileage IS NOT NULL")
-                avg_mileage = cursor.fetchone()[0]
-                stats['Average Mileage'] = float(avg_mileage) if avg_mileage else 0
+                cursor.execute("SELECT COUNT(*) FROM bike_information WHERE price IS NOT NULL AND price != ''")
+                stats['Bikes with Price Info'] = cursor.fetchone()[0]
             
             cursor.close()
             conn.close()
