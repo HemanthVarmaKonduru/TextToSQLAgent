@@ -1,15 +1,29 @@
-# ✈️ Airlines Text-to-SQL Agent
+# 🤖 Multi-Domain Text-to-SQL Agent
 
-A sophisticated natural language to SQL conversion system for airlines data analysis, powered by Azure OpenAI GPT-4.1 and PostgreSQL.
+A sophisticated natural language to SQL conversion system that supports multiple databases, powered by Azure OpenAI GPT-4.1 and PostgreSQL. Now featuring **Airlines** and **Bikes** databases with intelligent context switching.
 
 ## 🎯 Features
 
-- **Natural Language to SQL**: Convert human queries to PostgreSQL queries
-- **Context-Aware**: Only processes airlines-related questions
-- **AI-Powered Insights**: Generate meaningful insights from query results
-- **Interactive Visualizations**: Automatic chart generation with Plotly
-- **Secure Configuration**: Environment-based configuration management
-- **Professional UI**: Beautiful Streamlit interface with error handling
+### 🔥 **Multi-Database Support**
+- **✈️ Airlines Database**: Flight information, routes, prices, schedules, and airline data
+- **🏍️ Bikes Database**: Motorcycle specifications, performance, features, and pricing
+- **🔄 Dynamic Context Switching**: Seamlessly switch between databases with a dropdown selector
+- **🧠 Context-Aware Processing**: Each database has specialized prompts and validation
+
+### 🚀 **Core Capabilities**
+- **Natural Language Processing**: Convert plain English questions to SQL queries
+- **Intelligent Query Generation**: Context-aware SQL generation for each database domain
+- **Real-time Data Analysis**: Get instant insights and patterns from your data
+- **Interactive Visualizations**: Auto-generated charts and graphs using Plotly
+- **Error Handling**: Robust error management with helpful suggestions
+- **Query History**: Track and revisit previous queries
+- **Export Functionality**: Download results as CSV files
+
+### 🛡️ **Security & Architecture**
+- **Environment-based Configuration**: All sensitive data in `.env` files
+- **Context Restriction**: Prevents out-of-scope questions for each database
+- **Modular Design**: Clean, maintainable codebase with proper separation of concerns
+- **Professional Structure**: Production-ready architecture
 
 ## 🏗️ Project Structure
 
@@ -21,51 +35,102 @@ TextToSQLAgent/
 │   │   └── settings.py          # Environment-based settings
 │   ├── core/                     # Core functionality
 │   │   ├── __init__.py
-│   │   └── text_to_sql_agent.py # Main agent class
+│   │   └── text_to_sql_agent.py # Main agent class with multi-DB support
 │   ├── utils/                    # Utility modules
 │   │   ├── __init__.py
-│   │   ├── database.py          # Database operations
+│   │   ├── database.py          # Multi-database operations
 │   │   └── visualization.py     # Chart generation
 │   └── __init__.py
 ├── data/                         # Data files
-│   └── airlines_flights_data.csv
+│   ├── airlines_flights_data.csv # Airlines dataset
+│   └── bike_information.csv     # Bikes dataset
 ├── docs/                         # Documentation
 ├── tests/                        # Test files
-├── app.py                       # Main Streamlit application
+├── app.py                       # Main Streamlit application with DB selector
+├── database_setup.py            # Multi-database setup script
+├── test_multi_database.py       # Comprehensive test suite
 ├── requirements.txt             # Python dependencies
 ├── env.example                  # Environment variables template
 ├── .gitignore                   # Git ignore file
 └── README.md                    # This file
 ```
 
-## 🚀 Quick Start
+## 🗃️ Database Schemas
 
-### 1. Prerequisites
-
-- Python 3.8+
-- PostgreSQL database
-- Azure OpenAI account with GPT-4.1 deployment
-
-### 2. Installation
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd TextToSQLAgent
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Copy environment template
-cp env.example .env
-
-# Edit .env file with your credentials
-nano .env
+### ✈️ Airlines Database
+```sql
+-- Airlines table: airline_id, airline_name, airline_code
+-- Cities table: city_id, city_name, country
+-- Flights table: flight_id, airline_id, source_city_id, destination_city_id,
+--                flight_number, departure_time, arrival_time, stops, 
+--                class_type, duration, days_left, price
 ```
 
-### 3. Environment Configuration
+**Sample Airlines Queries:**
+- "Show me flights from Delhi to Mumbai"
+- "Find the cheapest flights under 5000 rupees"
+- "Which airlines fly to Bangalore?"
+- "What are the average prices by airline?"
 
-Create a `.env` file with the following variables:
+### 🏍️ Bikes Database
+```sql
+-- Bike_brands table: brand_id, brand_name
+-- Bikes table: bike_id, bike_name, brand_id, engine_capacity, transmission,
+--              colors, price, max_power, max_torque, top_speed, cylinders,
+--              fuel_type, mileage, fuel_tank_capacity, kerb_weight, abs_available
+```
+
+**Sample Bikes Queries:**
+- "Show me all Ducati bikes"
+- "Find bikes under 10 lakhs"
+- "Which bikes have ABS?"
+- "Show me bikes with mileage above 15 km/l"
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.8+
+- PostgreSQL 12+
+- Azure OpenAI Service access
+
+### Installation
+
+1. **Clone the repository:**
+```bash
+git clone https://github.com/HemanthVarmaKonduru/TextToSQLAgent.git
+cd TextToSQLAgent
+```
+
+2. **Create virtual environment:**
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. **Install dependencies:**
+```bash
+pip install -r requirements.txt
+```
+
+4. **Configure environment:**
+```bash
+cp env.example .env
+# Edit .env with your credentials
+```
+
+5. **Setup databases:**
+```bash
+python database_setup.py
+```
+
+6. **Run the application:**
+```bash
+streamlit run app.py
+```
+
+## ⚙️ Environment Configuration
+
+Create a `.env` file with your configuration:
 
 ```env
 # Azure OpenAI Configuration
@@ -82,148 +147,148 @@ DB_USER=postgres
 DB_PASSWORD=your_database_password_here
 
 # Application Configuration
-STREAMLIT_TITLE=Airlines Text-to-SQL Agent
-STREAMLIT_DESCRIPTION=Convert natural language to SQL queries for airlines data and get insights
+STREAMLIT_TITLE=Multi-Domain Text-to-SQL Agent
+STREAMLIT_DESCRIPTION=Convert natural language to SQL queries for multiple databases
 ```
 
-### 4. Database Setup
+## 🎮 How to Use
+
+### 1. **Select Database**
+- Choose between **Airlines** or **Bikes** database from the dropdown
+- Each database has its own specialized context and sample queries
+
+### 2. **Ask Questions**
+- Type your question in natural language
+- Use the sample queries as examples
+- Be specific about what you want to know
+
+### 3. **View Results**
+- See the generated SQL query
+- Analyze the data in an interactive table
+- Read AI-generated insights
+- Explore auto-generated visualizations
+
+### 4. **Export Data**
+- Download results as CSV files
+- Save visualizations as images
+- Track query history in the sidebar
+
+## 📊 Example Queries
+
+### Airlines Database Examples:
+```sql
+-- "Show me flights from Delhi to Mumbai"
+SELECT f.flight_id, a.airline_name, f.flight_number, 
+       sc.city_name AS source_city, dc.city_name AS destination_city, 
+       f.departure_time, f.arrival_time, f.price
+FROM flights f
+JOIN airlines a ON f.airline_id = a.airline_id
+JOIN cities sc ON f.source_city_id = sc.city_id
+JOIN cities dc ON f.destination_city_id = dc.city_id
+WHERE LOWER(sc.city_name) = 'delhi' AND LOWER(dc.city_name) = 'mumbai'
+ORDER BY f.departure_time LIMIT 100;
+```
+
+### Bikes Database Examples:
+```sql
+-- "Show me all Ducati bikes"
+SELECT b.bike_name, b.engine_capacity, b.max_power, b.price, b.top_speed
+FROM bikes b
+JOIN bike_brands br ON b.brand_id = br.brand_id
+WHERE LOWER(br.brand_name) = 'ducati'
+ORDER BY b.bike_name LIMIT 100;
+```
+
+## 🧪 Testing
+
+Run the comprehensive test suite:
 
 ```bash
-# Run database setup script
-python database_setup.py
-
-# Test database connection
-python test_db_connection.py
+python test_multi_database.py
 ```
 
-### 5. Run the Application
-
-```bash
-# Start the main application
-streamlit run app.py
-```
-
-## 📊 Database Schema
-
-### Airlines Table
-- `airline_id` (SERIAL PRIMARY KEY)
-- `airline_name` (VARCHAR(100) NOT NULL UNIQUE)
-- `airline_code` (VARCHAR(10))
-
-### Cities Table
-- `city_id` (SERIAL PRIMARY KEY)
-- `city_name` (VARCHAR(100) NOT NULL UNIQUE)
-- `country` (VARCHAR(50) DEFAULT 'India')
-
-### Flights Table
-- `flight_id` (SERIAL PRIMARY KEY)
-- `airline_id` (INTEGER REFERENCES airlines(airline_id))
-- `flight_number` (VARCHAR(20))
-- `source_city_id` (INTEGER REFERENCES cities(city_id))
-- `destination_city_id` (INTEGER REFERENCES cities(city_id))
-- `departure_time` (VARCHAR(20))
-- `arrival_time` (VARCHAR(20))
-- `stops` (VARCHAR(20))
-- `class_type` (VARCHAR(20))
-- `duration` (DECIMAL(5,2))
-- `days_left` (INTEGER)
-- `price` (INTEGER)
-- `created_at` (TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
-
-## 💡 Example Queries
-
-### Valid Airlines Questions ✅
-- "Show me flights from Delhi to Mumbai"
-- "Find the cheapest flights under 5000 rupees"
-- "Which airlines fly to Bangalore?"
-- "Show me business class flights"
-- "Find flights with no stops"
-- "What are the average prices by airline?"
-- "Show me flights departing in the morning"
-- "Which routes have the highest prices?"
-
-### Invalid Questions ❌
-- "Who is the president of India?"
-- "What is the weather like?"
-- "How to cook pasta?"
-- "What is 2+2?"
+This tests:
+- ✅ Airlines database queries
+- ✅ Bikes database queries  
+- ✅ Context restriction (prevents off-topic questions)
+- ✅ Database switching functionality
+- ✅ Statistical analysis
+- ✅ Error handling
 
 ## 🔧 Development
 
-### Project Structure Benefits
+### Adding New Databases
 
-1. **Modular Design**: Clean separation of concerns
-2. **Configuration Management**: Secure environment-based settings
-3. **Type Hints**: Full type annotations for better IDE support
-4. **Error Handling**: Comprehensive error handling and logging
-5. **Documentation**: Detailed docstrings and comments
+1. **Update Database Setup** (`database_setup.py`):
+   - Add new table creation functions
+   - Add data insertion functions
+   - Update schema information
 
-### Adding New Features
+2. **Update Database Manager** (`src/utils/database.py`):
+   - Add new schema method
+   - Update quick stats function
+   - Add sample queries
 
-1. **New Database Operations**: Add to `src/utils/database.py`
-2. **New Visualizations**: Add to `src/utils/visualization.py`
-3. **Configuration Changes**: Update `src/config/settings.py`
-4. **Core Logic**: Modify `src/core/text_to_sql_agent.py`
+3. **Update Agent** (`src/core/text_to_sql_agent.py`):
+   - Add new system prompt method
+   - Update context validation
+   - Add domain-specific processing
 
-### Testing
+4. **Update UI** (`app.py`):
+   - Add database option to dropdown
+   - Update help text and examples
+   - Add domain-specific visualizations
 
-```bash
-# Run tests
-python -m pytest tests/
-
-# Test specific functionality
-python test_airlines_queries.py
-```
+### Code Quality
+- Type hints throughout the codebase
+- Comprehensive logging
+- Modular architecture
+- Extensive test coverage
+- Professional documentation
 
 ## 🛡️ Security Features
 
-- **Environment Variables**: All sensitive data stored in `.env`
-- **Input Validation**: Comprehensive query validation
-- **Context Restrictions**: Only airlines-related queries allowed
-- **Error Handling**: Secure error messages without data exposure
-- **Database Security**: Proper connection management
+- **API Key Protection**: All sensitive data in environment variables
+- **Context Validation**: Prevents queries outside database scope
+- **Input Sanitization**: SQL injection protection
+- **Error Handling**: Graceful failure management
+- **Access Control**: Database-level permissions
 
 ## 📈 Performance
 
-- **Caching**: Efficient database connection pooling
-- **Optimization**: Query optimization and result limiting
-- **Memory Management**: Proper DataFrame handling
-- **Async Support**: Ready for async operations
+- **Optimized Queries**: Efficient SQL generation with LIMIT clauses
+- **Connection Pooling**: Proper database connection management
+- **Caching**: Streamlit session state for agent instances
+- **Parallel Processing**: Multi-database support without conflicts
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Development Guidelines
-
-- Follow PEP 8 style guidelines
-- Add type hints to all functions
-- Include docstrings for all classes and methods
-- Write tests for new functionality
-- Update documentation for any changes
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass
+6. Submit a pull request
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ## 🙏 Acknowledgments
 
-- Azure OpenAI for providing the GPT-4.1 model
-- Streamlit for the web framework
-- Plotly for interactive visualizations
-- PostgreSQL for the database system
-
-## 📞 Support
-
-For support and questions:
-- Create an issue in the repository
-- Check the documentation in the `docs/` folder
-- Review the troubleshooting guide
+- **Azure OpenAI** for powerful language model capabilities
+- **Streamlit** for the intuitive web interface
+- **PostgreSQL** for robust database management
+- **Plotly** for interactive visualizations
+- **Pandas** for data manipulation
 
 ---
 
-**Made with ❤️ for Airlines Data Analysis** 
+## 📞 Support
+
+For issues, questions, or contributions:
+- 📧 Email: [your-email@example.com]
+- 💬 GitHub Issues: [Create an issue](https://github.com/HemanthVarmaKonduru/TextToSQLAgent/issues)
+- 📖 Documentation: Check the `/docs` folder for detailed guides
+
+**🎉 Ready to explore your data with natural language? Start asking questions!** 

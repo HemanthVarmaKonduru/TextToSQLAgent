@@ -1,283 +1,418 @@
 """
-Main Streamlit application for the Airlines Text-to-SQL Agent.
-Uses the clean, modular structure with proper configuration management.
+Multi-Domain Text-to-SQL Agent Streamlit Application.
+Supports Airlines and Bikes databases with natural language querying.
 """
 
 import streamlit as st
-import time
 import pandas as pd
-from typing import Dict, Any
+import plotly.express as px
+import plotly.graph_objects as go
+from datetime import datetime
+import logging
 
-# Import from our clean structure
-from src.core import TextToSQLAgent
-from src.config import settings
-from src.utils import DataVisualizer
+# Import our custom modules
+from src.core.text_to_sql_agent import TextToSQLAgent
+from src.config.settings import settings
+from src.utils.visualization import DataVisualizer
 
-# Page configuration
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Configure Streamlit page
 st.set_page_config(
-    page_title=settings.STREAMLIT_TITLE,
-    page_icon="✈️",
+    page_title="Multi-Domain Text-to-SQL Agent",
+    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
+# Custom CSS for better styling
 st.markdown("""
 <style>
     .main-header {
         font-size: 2.5rem;
         font-weight: bold;
-        color: #1f77b4;
-        text-align: center;
-        margin-bottom: 1rem;
-    }
-    .sub-header {
-        font-size: 1.2rem;
-        color: #666;
         text-align: center;
         margin-bottom: 2rem;
+        background: linear-gradient(90deg, #1f77b4, #ff7f0e);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
-    .info-box {
+    .database-selector {
         background-color: #f0f2f6;
         padding: 1rem;
-        border-radius: 0.5rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+    .success-message {
+        color: #0066cc;
+        font-weight: bold;
+    }
+    .error-message {
+        color: #ff0000;
+        font-weight: bold;
+    }
+    .info-box {
+        background-color: #e8f4fd;
+        padding: 1rem;
+        border-radius: 5px;
         border-left: 4px solid #1f77b4;
         margin: 1rem 0;
     }
-    .error-message {
-        background-color: #ffebee;
+    .metric-container {
+        background-color: #f8f9fa;
         padding: 1rem;
-        border-radius: 0.5rem;
-        border-left: 4px solid #f44336;
-        margin: 1rem 0;
-    }
-    .success-box {
-        background-color: #e8f5e8;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border-left: 4px solid #4caf50;
-        margin: 1rem 0;
-    }
-    .metric-card {
-        background-color: #ffffff;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border: 1px solid #e0e0e0;
+        border-radius: 10px;
         text-align: center;
     }
 </style>
 """, unsafe_allow_html=True)
 
-def main():
-    """Main application function."""
-    
-    # Header
-    st.markdown(f'<h1 class="main-header">{settings.STREAMLIT_TITLE}</h1>', unsafe_allow_html=True)
-    st.markdown(f'<p class="sub-header">{settings.STREAMLIT_DESCRIPTION}</p>', unsafe_allow_html=True)
-    
-    # Sidebar
-    with st.sidebar:
-        st.header("📊 Database Schema")
-        st.markdown("""
-        **airlines** table:
-        - airline_id, airline_name, airline_code
-        
-        **cities** table:
-        - city_id, city_name, country
-        
-        **flights** table:
-        - flight_id, airline_id, flight_number, source_city_id, destination_city_id
-        - departure_time, arrival_time, stops, class_type, duration, price
-        """)
-        
-        st.header("💡 Example Queries")
-        example_queries = [
-            "Show me flights from Delhi to Mumbai",
-            "Find the cheapest flights under 5000 rupees",
-            "Which airlines fly to Bangalore?",
-            "Show me business class flights",
-            "Find flights with no stops",
-            "What are the average prices by airline?",
-            "Show me flights departing in the morning",
-            "Which routes have the highest prices?"
-        ]
-        
-        for query in example_queries:
-            if st.button(query, key=f"example_{query}"):
-                st.session_state.user_query = query
-        
-        st.header("📈 Quick Stats")
-        try:
-            agent = TextToSQLAgent()
-            db_manager = agent.db_manager
-            
-            # Get some quick stats
-            total_flights = len(db_manager.execute_query("SELECT COUNT(*) as count FROM flights"))
-            avg_price = db_manager.execute_query("SELECT AVG(price) as avg_price FROM flights")
-            airlines_count = len(db_manager.execute_query("SELECT COUNT(*) as count FROM airlines"))
-            
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Total Flights", f"{total_flights.iloc[0]['count']:,}")
-            with col2:
-                st.metric("Avg Price", f"₹{avg_price.iloc[0]['avg_price']:.0f}")
-            with col3:
-                st.metric("Airlines", airlines_count.iloc[0]['count'])
-                
-        except Exception as e:
-            st.error(f"Error loading stats: {e}")
-    
-    # Main content
-    st.header("🤖 Ask About Airlines Data")
-    
-    # Query input
-    user_query = st.text_area(
-        "Enter your question about airlines data:",
-        placeholder="e.g., Show me flights from Delhi to Mumbai",
-        key="user_query",
-        height=100
-    )
-    
-    # Process button
-    if st.button("🚀 Process Query", type="primary"):
-        if user_query.strip():
-            process_query(user_query)
-        else:
-            st.warning("Please enter a query.")
-    
-    # Footer
-    st.markdown("---")
-    st.markdown(
-        """
-        <div style='text-align: center; color: #666;'>
-            <p>✈️ Airlines Text-to-SQL Agent | Powered by Azure OpenAI GPT-4.1 | PostgreSQL Database</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+def initialize_session_state():
+    """Initialize session state variables."""
+    if 'agent' not in st.session_state:
+        st.session_state.agent = None
+    if 'current_database' not in st.session_state:
+        st.session_state.current_database = "airlines"
+    if 'query_history' not in st.session_state:
+        st.session_state.query_history = []
 
-def process_query(user_query: str):
-    """Process the user query and display results."""
-    
-    # Progress bar
-    progress_bar = st.progress(0)
-    status_text = st.empty()
-    
+def get_agent(database_type):
+    """Get or create agent for the specified database type."""
+    if (st.session_state.agent is None or 
+        st.session_state.current_database != database_type):
+        try:
+            st.session_state.agent = TextToSQLAgent(database_type=database_type)
+            st.session_state.current_database = database_type
+            logger.info(f"Initialized agent for {database_type} database")
+        except Exception as e:
+            st.error(f"Failed to initialize agent: {e}")
+            return None
+    return st.session_state.agent
+
+def display_quick_stats(agent, database_type):
+    """Display quick statistics for the selected database."""
     try:
-        # Initialize agent
-        status_text.text("Initializing agent...")
-        progress_bar.progress(20)
-        
-        agent = TextToSQLAgent()
-        
-        # Process query
-        status_text.text("Processing your query...")
-        progress_bar.progress(50)
-        
-        result = agent.process_query(user_query)
-        progress_bar.progress(100)
-        
-        # Display results
+        stats = agent.db_manager.get_quick_stats(database_type)
+        if stats:
+            cols = st.columns(len(stats))
+            for i, (key, value) in enumerate(stats.items()):
+                with cols[i]:
+                    st.markdown(f"""
+                    <div class="metric-container">
+                        <h3>{value:,}</h3>
+                        <p>{key}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+    except Exception as e:
+        logger.error(f"Error displaying stats: {e}")
+
+def display_sample_queries(agent, database_type):
+    """Display sample queries for the selected database."""
+    try:
+        sample_queries = agent.db_manager.get_sample_queries(database_type)
+        if sample_queries:
+            st.subheader("💡 Sample Questions")
+            cols = st.columns(2)
+            for i, query in enumerate(sample_queries):
+                col_idx = i % 2
+                with cols[col_idx]:
+                    if st.button(f"📝 {query}", key=f"sample_{i}"):
+                        st.session_state.sample_query = query
+                        st.rerun()
+    except Exception as e:
+        logger.error(f"Error displaying sample queries: {e}")
+
+def process_query(agent, query, database_type):
+    """Process a user query and display results."""
+    try:
+        with st.spinner(f"🔍 Processing your {database_type} query..."):
+            result = agent.process_query(query)
+            
         if result['success']:
-            st.success("✅ Query processed successfully!")
+            # Display success message
+            st.markdown(f'<div class="success-message">✅ Query processed successfully!</div>', 
+                       unsafe_allow_html=True)
             
             # Display SQL query
-            st.subheader("🔍 Generated SQL Query")
-            st.code(result['sql_query'], language='sql')
+            with st.expander("🔍 Generated SQL Query", expanded=False):
+                st.code(result['sql_query'], language='sql')
             
-            # Display data
-            st.subheader("📊 Query Results")
-            
-            # Show data info
-            col_data1, col_data2, col_data3 = st.columns(3)
-            with col_data1:
-                st.metric("Rows", len(result['data']))
-            with col_data2:
-                st.metric("Columns", len(result['data'].columns))
-            with col_data3:
-                st.metric("Memory Usage", f"{result['data'].memory_usage(deep=True).sum() / 1024:.1f} KB")
-            
-            # Display the data
-            st.dataframe(result['data'], use_container_width=True)
-            
-            # Download button for data
-            csv = result['data'].to_csv(index=False)
-            st.download_button(
-                label="📥 Download CSV",
-                data=csv,
-                file_name=f"airlines_query_results_{int(time.time())}.csv",
-                mime="text/csv"
-            )
+            # Display results
+            if not result['data'].empty:
+                st.subheader("📊 Query Results")
+                st.dataframe(result['data'], use_container_width=True, height=400)
+                
+                # Download button
+                csv = result['data'].to_csv(index=False)
+                st.download_button(
+                    label="📥 Download Results as CSV",
+                    data=csv,
+                    file_name=f"{database_type}_query_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv"
+                )
+            else:
+                st.info(f"No data found for your {database_type} query.")
             
             # Display insights
-            st.subheader("🧠 AI-Generated Insights")
-            st.markdown(f'<div class="info-box">{result["insights"]}</div>', unsafe_allow_html=True)
+            if result['insights']:
+                st.subheader("🧠 AI Insights")
+                st.markdown(f'<div class="info-box">{result["insights"]}</div>', 
+                           unsafe_allow_html=True)
             
-            # Display visualizations
-            st.subheader("📈 Visualizations")
-            
-            if result['data'].empty:
-                st.warning("No data to visualize.")
-            else:
-                # Create visualizations
-                visualizations = DataVisualizer.auto_create_visualizations(
-                    result['data'], 
-                    user_query, 
-                    result['visualization_suggestions']
-                )
-                
-                if visualizations:
-                    # Display each visualization
-                    for viz_name, fig in visualizations.items():
-                        st.plotly_chart(fig, use_container_width=True)
-                        
-                        # Add download button for each chart
-                        col_viz1, col_viz2 = st.columns([3, 1])
-                        with col_viz2:
-                            if st.button(f"📥 Download {viz_name.replace('_', ' ').title()}", key=f"download_{viz_name}"):
-                                # Save as PNG
-                                fig.write_image(f"{viz_name}_{int(time.time())}.png")
-                                st.success(f"Chart saved as {viz_name}_{int(time.time())}.png")
-                else:
-                    st.info("No suitable visualizations could be created for this data.")
+            # Create visualizations
+            if not result['data'].empty and result['visualizations']:
+                st.subheader("📈 Data Visualizations")
+                create_visualizations(result['data'], result['visualizations'], database_type)
         
         else:
             # Handle different types of errors
-            if result.get('error_type') == 'non_airlines_question':
-                st.error("❌ Question Not Related to Airlines Data")
-                st.markdown(f'<div class="error-message">{result["insights"]}</div>', unsafe_allow_html=True)
+            if result.get('error_type') == f'non_{database_type}_question':
+                st.error(f"❌ Question Not Related to {database_type.title()} Data")
+                st.markdown(f'<div class="error-message">{result["insights"]}</div>', 
+                           unsafe_allow_html=True)
                 
-                # Provide helpful suggestions
+                # Provide helpful suggestions based on database type
                 st.subheader("💡 Try asking questions about:")
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown("""
-                    **Flight Information:**
-                    - Show me flights from Delhi to Mumbai
-                    - Find the cheapest flights under 5000 rupees
-                    - Which airlines fly to Bangalore?
-                    - Show me business class flights
-                    """)
-                with col2:
-                    st.markdown("""
-                    **Travel Analysis:**
-                    - Find flights with no stops
-                    - What are the average prices by airline?
-                    - Show me flights departing in the morning
-                    - Which routes have the highest prices?
-                    """)
+                if database_type == "airlines":
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.markdown("""
+                        **Flight Information:**
+                        - Show me flights from Delhi to Mumbai
+                        - Find the cheapest flights under 5000 rupees
+                        - Which airlines fly to Bangalore?
+                        - Show me business class flights
+                        """)
+                    with col2:
+                        st.markdown("""
+                        **Travel Analysis:**
+                        - Find flights with no stops
+                        - What are the average prices by airline?
+                        - Show me flights departing in the morning
+                        - Which routes have the highest prices?
+                        """)
+                elif database_type == "bikes":
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.markdown("""
+                        **Bike Information:**
+                        - Show me all Ducati bikes
+                        - Find bikes under 10 lakhs
+                        - Which bikes have ABS?
+                        - Show me bikes with mileage above 15 km/l
+                        """)
+                    with col2:
+                        st.markdown("""
+                        **Performance Analysis:**
+                        - Find the most powerful bikes
+                        - Show me electric bikes
+                        - Which bikes have the highest top speed?
+                        - Compare bikes by brand
+                        """)
             else:
                 st.error("❌ Error processing query")
-                st.markdown(f'<div class="error-message">{result["insights"]}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="error-message">{result["insights"]}</div>', 
+                           unsafe_allow_html=True)
+                
+    except Exception as e:
+        logger.error(f"Error processing query: {e}")
+        st.error(f"An unexpected error occurred: {str(e)}")
+
+def create_visualizations(df, viz_suggestions, database_type):
+    """Create visualizations based on suggestions."""
+    try:
+        visualizer = DataVisualizer()
+        
+        # Create columns for visualizations
+        num_viz = min(len(viz_suggestions), 4)
+        if num_viz == 1:
+            cols = [st.container()]
+        elif num_viz == 2:
+            cols = st.columns(2)
+        else:
+            cols = st.columns(2)
+        
+        for i, viz_type in enumerate(viz_suggestions[:4]):
+            with cols[i % 2]:
+                try:
+                    if viz_type == "Price Distribution" and 'price' in df.columns:
+                        # Clean price data for visualization
+                        price_col = df['price'].astype(str).str.replace('[₹,]', '', regex=True)
+                        numeric_prices = pd.to_numeric(price_col, errors='coerce').dropna()
+                        if not numeric_prices.empty:
+                            fig = px.histogram(x=numeric_prices, 
+                                             title=f"{database_type.title()} Price Distribution",
+                                             labels={'x': 'Price (₹)', 'y': 'Count'})
+                            st.plotly_chart(fig, use_container_width=True)
+                    
+                    elif viz_type == "Brand Comparison" and 'brand_name' in df.columns:
+                        brand_counts = df['brand_name'].value_counts().head(10)
+                        fig = px.bar(x=brand_counts.index, y=brand_counts.values,
+                                   title="Bikes by Brand",
+                                   labels={'x': 'Brand', 'y': 'Count'})
+                        st.plotly_chart(fig, use_container_width=True)
+                    
+                    elif viz_type == "Airlines Comparison" and 'airline_name' in df.columns:
+                        airline_counts = df['airline_name'].value_counts().head(10)
+                        fig = px.bar(x=airline_counts.index, y=airline_counts.values,
+                                   title="Flights by Airline",
+                                   labels={'x': 'Airline', 'y': 'Count'})
+                        st.plotly_chart(fig, use_container_width=True)
+                    
+                    elif viz_type == "Mileage Analysis" and 'mileage' in df.columns:
+                        mileage_data = df['mileage'].dropna()
+                        if not mileage_data.empty:
+                            fig = px.histogram(x=mileage_data,
+                                             title="Mileage Distribution",
+                                             labels={'x': 'Mileage (km/l)', 'y': 'Count'})
+                            st.plotly_chart(fig, use_container_width=True)
+                    
+                    elif viz_type == "Performance Metrics":
+                        if 'max_power' in df.columns and 'top_speed' in df.columns:
+                            # Extract numeric values from power and speed
+                            power_vals = df['max_power'].astype(str).str.extract(r'(\d+\.?\d*)').astype(float)
+                            speed_vals = df['top_speed'].astype(str).str.extract(r'(\d+)').astype(float)
+                            
+                            plot_df = pd.DataFrame({
+                                'power': power_vals[0],
+                                'speed': speed_vals[0],
+                                'bike': df['bike_name']
+                            }).dropna()
+                            
+                            if not plot_df.empty:
+                                fig = px.scatter(plot_df, x='power', y='speed', hover_name='bike',
+                                               title="Power vs Top Speed",
+                                               labels={'power': 'Max Power (bhp)', 'speed': 'Top Speed (kmph)'})
+                                st.plotly_chart(fig, use_container_width=True)
+                
+                except Exception as viz_error:
+                    logger.error(f"Error creating visualization {viz_type}: {viz_error}")
+                    st.warning(f"Could not create {viz_type} visualization")
     
     except Exception as e:
-        st.error(f"❌ Error: {str(e)}")
-        st.info("Please check your configuration and database connection.")
+        logger.error(f"Error in create_visualizations: {e}")
+        st.warning("Could not create visualizations")
+
+def main():
+    """Main application function."""
+    # Initialize session state
+    initialize_session_state()
     
-    finally:
-        # Clear progress
-        progress_bar.empty()
-        status_text.empty()
+    # Main header
+    st.markdown('<h1 class="main-header">🤖 Multi-Domain Text-to-SQL Agent</h1>', 
+                unsafe_allow_html=True)
+    
+    # Database selector
+    st.markdown('<div class="database-selector">', unsafe_allow_html=True)
+    st.subheader("🗃️ Select Database")
+    
+    database_options = {
+        "airlines": "✈️ Airlines - Flight information, routes, prices, and schedules",
+        "bikes": "🏍️ Bikes - Motorcycle specifications, performance, and features"
+    }
+    
+    selected_database = st.selectbox(
+        "Choose your database:",
+        options=list(database_options.keys()),
+        format_func=lambda x: database_options[x],
+        index=0 if st.session_state.current_database == "airlines" else 1,
+        help="Select the database you want to query"
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Get agent for selected database
+    agent = get_agent(selected_database)
+    if agent is None:
+        st.error("Failed to initialize the agent. Please check your configuration.")
+        return
+    
+    # Display database information
+    st.markdown(f"**Current Database:** {selected_database.title()}")
+    st.markdown(f"*{agent.db_manager.get_database_description(selected_database)}*")
+    
+    # Display quick stats
+    st.subheader("📊 Quick Statistics")
+    display_quick_stats(agent, selected_database)
+    
+    # Main query interface
+    st.subheader(f"🔍 Ask Questions About {selected_database.title()} Data")
+    
+    # Check for sample query selection
+    if 'sample_query' in st.session_state:
+        query = st.text_area(
+            "Enter your question:",
+            value=st.session_state.sample_query,
+            height=100,
+            help=f"Ask any question about {selected_database} data in natural language"
+        )
+        del st.session_state.sample_query
+    else:
+        query = st.text_area(
+            "Enter your question:",
+            height=100,
+            help=f"Ask any question about {selected_database} data in natural language",
+            placeholder=f"e.g., Show me all {selected_database} with specific criteria..."
+        )
+    
+    # Process query button
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        if st.button("🚀 Process Query", type="primary", use_container_width=True):
+            if query.strip():
+                # Add to query history
+                st.session_state.query_history.append({
+                    'query': query,
+                    'database': selected_database,
+                    'timestamp': datetime.now()
+                })
+                
+                # Process the query
+                process_query(agent, query, selected_database)
+            else:
+                st.warning("Please enter a question first!")
+    
+    with col2:
+        if st.button("🗑️ Clear", use_container_width=True):
+            st.rerun()
+    
+    # Display sample queries
+    display_sample_queries(agent, selected_database)
+    
+    # Sidebar with additional information
+    with st.sidebar:
+        st.header("ℹ️ Information")
+        
+        # Database schema
+        with st.expander(f"📋 {selected_database.title()} Database Schema"):
+            schema_info = agent.db_manager.get_database_schema(selected_database)
+            st.text(schema_info)
+        
+        # Query history
+        if st.session_state.query_history:
+            st.subheader("📝 Recent Queries")
+            recent_queries = st.session_state.query_history[-5:]  # Show last 5
+            for i, item in enumerate(reversed(recent_queries)):
+                with st.expander(f"{item['database'].title()}: {item['query'][:30]}..."):
+                    st.write(f"**Database:** {item['database']}")
+                    st.write(f"**Query:** {item['query']}")
+                    st.write(f"**Time:** {item['timestamp'].strftime('%H:%M:%S')}")
+        
+        # Help section
+        st.subheader("❓ Help")
+        st.markdown("""
+        **How to use:**
+        1. Select your database (Airlines or Bikes)
+        2. Type your question in natural language
+        3. Click 'Process Query' to get results
+        4. View the generated SQL, data, and insights
+        
+        **Tips:**
+        - Be specific in your questions
+        - Use sample queries as examples
+        - Switch databases to explore different data
+        """)
 
 if __name__ == "__main__":
     main() 
