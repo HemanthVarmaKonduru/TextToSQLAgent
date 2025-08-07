@@ -2,7 +2,6 @@
 .env
 .env.local
 .env.production
-.env.staging
 
 # Python
 __pycache__/
@@ -22,65 +21,19 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
 
-# PyInstaller
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pyenv
-.python-version
-
-# celery beat schedule file
-celerybeat-schedule
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.venv
-env/
+# Virtual environments
+.venv/
 venv/
 ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+env/
+.env/
 
 # IDE
 .vscode/
@@ -88,6 +41,27 @@ dmypy.json
 *.swp
 *.swo
 *~
+
+# Testing
+.coverage
+.pytest_cache/
+.tox/
+htmlcov/
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+
+# Streamlit
+.streamlit/
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite3
 
 # OS
 .DS_Store
@@ -98,38 +72,18 @@ dmypy.json
 ehthumbs.db
 Thumbs.db
 
-# Logs
-*.log
-logs/
+# Jupyter Notebook
+.ipynb_checkpoints
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
+# PyCharm
+.idea/
 
-# Temporary files
-*.tmp
-*.temp
-temp/
-tmp/
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
 
-# Data files (keep example data)
-data/*.csv
-!data/airlines_flights_data.csv
-
-# Generated files
-*.png
-*.jpg
-*.jpeg
-*.pdf
-*.html
-
-# Streamlit
-.streamlit/
-
-# Azure
-.azure/
-
-# Test files
-test_*.py
-*_test.py 
+# Backup files
+*.backup
+*.bak
+*.tmp 

@@ -1,11 +1,11 @@
 """
-Core Text-to-SQL Agent for Multi-Domain Natural Language to SQL conversion.
-Supports Airlines and Bikes databases with context-aware processing.
+Core Text-to-SQL Agent for Bikes Natural Language to SQL conversion.
+Specialized for motorcycle/bike data with context-aware processing.
 """
 
 import logging
 from typing import Dict, List, Any
-from openai import AzureOpenAI
+from openai import OpenAI
 import pandas as pd
 
 from ..config.settings import settings
@@ -27,11 +27,9 @@ class TextToSQLAgent:
         if not settings.validate_config():
             raise ValueError("Configuration validation failed. Please check your environment variables.")
         
-        # Initialize Azure OpenAI client
-        self.client = AzureOpenAI(
-            api_key=settings.AZURE_OPENAI_API_KEY,
-            api_version=settings.AZURE_OPENAI_API_VERSION,
-            azure_endpoint=settings.AZURE_OPENAI_ENDPOINT
+        # Initialize OpenAI client
+        self.client = OpenAI(
+            api_key=settings.OPENAI_API_KEY
         )
         
         # Initialize database manager
@@ -65,7 +63,7 @@ class TextToSQLAgent:
         
         try:
             response = self.client.chat.completions.create(
-                model=settings.AZURE_OPENAI_DEPLOYMENT_NAME,
+                model=settings.OPENAI_MODEL,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": query}
@@ -163,20 +161,22 @@ Valid Bikes Topics:
 SQL Generation Rules:
 1. Only return the SQL query, no explanations
 2. Use proper PostgreSQL syntax
-3. Query the single table: bike_information (no JOINs needed)
+3. Use JOINs between bikes and bike_brands tables when needed
 4. Use meaningful column aliases for better readability
 5. Add LIMIT 100 if the query might return many rows
 6. Include ORDER BY when appropriate for meaningful results
 7. Use LOWER() and LIKE for case-insensitive text searches
 8. Handle price comparisons carefully using REGEXP_REPLACE to extract numbers
 9. For engine capacity searches, use LIKE with patterns like '%1000%' or '%1000cc%'
-10. Remember all columns are TEXT type, so use appropriate string functions
+10. For top_speed/numeric comparisons, filter out '--' values: WHERE top_speed != '--' AND REGEXP_REPLACE(top_speed, '[^0-9]', '', 'g') != ''
+11. Remember price and numeric columns are TEXT type, so use appropriate string functions
 
 Valid Bikes Query Examples:
-- "Show me all 1000CC bikes" -> SELECT bike_name, engine_capacity, max_power, price, top_speed FROM bike_information WHERE engine_capacity LIKE '1,0%cc' OR engine_capacity LIKE '1,1%cc' ORDER BY bike_name LIMIT 100;
-- "Find Ducati bikes" -> SELECT bike_name, engine_capacity, max_power, price, top_speed FROM bike_information WHERE LOWER(bike_name) LIKE '%ducati%' ORDER BY bike_name LIMIT 100;
-- "Show bikes under 10 lakhs" -> SELECT bike_name, engine_capacity, price, max_power FROM bike_information WHERE price IS NOT NULL AND CAST(REGEXP_REPLACE(price, '[^0-9]', '', 'g') AS BIGINT) < 1000000 ORDER BY CAST(REGEXP_REPLACE(price, '[^0-9]', '', 'g') AS BIGINT) LIMIT 100;
-- "Which bikes have disc brakes?" -> SELECT bike_name, front_brake_type, rear_brake_type, price FROM bike_information WHERE LOWER(front_brake_type) LIKE '%disc%' OR LOWER(rear_brake_type) LIKE '%disc%' ORDER BY bike_name LIMIT 100;
+- "Show me all 1000CC bikes" -> SELECT b.bike_name, b.engine_capacity, b.max_power, b.price, b.top_speed FROM bikes b WHERE b.engine_capacity LIKE '%1000%' OR b.engine_capacity LIKE '%1000cc%' ORDER BY b.bike_name LIMIT 100;
+- "Find Ducati bikes" -> SELECT b.bike_name, b.engine_capacity, b.max_power, b.price, b.top_speed FROM bikes b JOIN bike_brands br ON b.brand_id = br.brand_id WHERE LOWER(br.brand_name) = 'ducati' ORDER BY b.bike_name LIMIT 100;
+- "Show bikes under 10 lakhs" -> SELECT b.bike_name, b.engine_capacity, b.price, b.max_power FROM bikes b WHERE b.price IS NOT NULL AND CAST(REGEXP_REPLACE(b.price, '[^0-9]', '', 'g') AS BIGINT) < 1000000 ORDER BY CAST(REGEXP_REPLACE(b.price, '[^0-9]', '', 'g') AS BIGINT) LIMIT 100;
+- "Which bikes have disc brakes?" -> SELECT b.bike_name, b.front_brake_type, b.rear_brake_type, b.price FROM bikes b WHERE LOWER(b.front_brake_type) LIKE '%disc%' OR LOWER(b.rear_brake_type) LIKE '%disc%' ORDER BY b.bike_name LIMIT 100;
+- "Show bikes with top speed over 200" -> SELECT b.bike_name, b.engine_capacity, b.top_speed, b.max_power, b.price FROM bikes b WHERE b.top_speed != '--' AND REGEXP_REPLACE(b.top_speed, '[^0-9]', '', 'g') != '' AND CAST(REGEXP_REPLACE(b.top_speed, '[^0-9]', '', 'g') AS INTEGER) > 200 ORDER BY CAST(REGEXP_REPLACE(b.top_speed, '[^0-9]', '', 'g') AS INTEGER) DESC LIMIT 100;
 
 Invalid Questions (DO NOT ANSWER):
 - General knowledge questions (presidents, capitals, history)
@@ -228,7 +228,7 @@ Provide a clear, concise analysis in 3-4 sentences."""
         
         try:
             response = self.client.chat.completions.create(
-                model=settings.AZURE_OPENAI_DEPLOYMENT_NAME,
+                model=settings.OPENAI_MODEL,
                 messages=[
                     {"role": "system", "content": f"You are a {self.current_database} data analyst. Provide clear, actionable insights."},
                     {"role": "user", "content": context_prompt}

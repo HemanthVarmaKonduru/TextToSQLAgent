@@ -1,5 +1,5 @@
 """
-Configuration settings for the Airlines Text-to-SQL Agent.
+Configuration settings for the Bikes Text-to-SQL Agent.
 All sensitive information is loaded from environment variables.
 """
 
@@ -13,23 +13,26 @@ load_dotenv()
 class Settings:
     """Application settings loaded from environment variables."""
     
-    # Azure OpenAI Configuration
-    AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
-    AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
-    AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-12-01-preview")
-    AZURE_OPENAI_DEPLOYMENT_NAME = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4.1")
+    # OpenAI Configuration
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     
     # Database Configuration
     DB_HOST = os.getenv("DB_HOST", "localhost")
     DB_PORT = os.getenv("DB_PORT", "5432")
-    DB_NAME = os.getenv("DB_NAME", "airlines_db")
+    DB_NAME = os.getenv("DB_NAME", "bikes_database")
     DB_USER = os.getenv("DB_USER", "postgres")
     DB_PASSWORD = os.getenv("DB_PASSWORD")
     
+    # Application Configuration
+    APP_NAME = os.getenv("APP_NAME", "Bikes TextToSQL Agent")
+    APP_DEBUG = os.getenv("APP_DEBUG", "false").lower() == "true"
+    LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+    
     # Streamlit Configuration
-    STREAMLIT_TITLE = os.getenv("STREAMLIT_TITLE", "Airlines Text-to-SQL Agent")
+    STREAMLIT_TITLE = os.getenv("STREAMLIT_TITLE", "🏍️ Bikes TextToSQL Agent")
     STREAMLIT_DESCRIPTION = os.getenv("STREAMLIT_DESCRIPTION", 
-                                    "Convert natural language to SQL queries for airlines data and get insights")
+                                    "Ask questions about motorcycles in natural language")
     
     @classmethod
     def get_database_url(cls) -> str:
@@ -44,8 +47,7 @@ class Settings:
     def validate_config(cls) -> bool:
         """Validate that all required configuration is present."""
         required_vars = [
-            "AZURE_OPENAI_ENDPOINT",
-            "AZURE_OPENAI_API_KEY",
+            "OPENAI_API_KEY",
             "DB_PASSWORD"
         ]
         
