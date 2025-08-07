@@ -82,15 +82,3 @@ python -m pytest tests/
 - **Performance Metrics**: Analyze speed, power, mileage, and pricing
 - **Interactive UI**: User-friendly Streamlit interface
 
-## 🤝 Contributing
-
-Please read the [Development Documentation](docs/development/) for contribution guidelines.
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 🔗 Links
-
-- [Version History](version_history/) - Track project changes and updates
-- [Issue Tracker](https://github.com/your-repo/issues) - Report bugs and feature requests 
