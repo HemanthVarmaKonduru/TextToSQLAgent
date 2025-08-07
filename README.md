@@ -37,14 +37,7 @@ TextToSQLAgent/
 └── config/                       # Configuration files
 ```
 
-## 📚 Documentation
 
-- **[User Guide](docs/user_guide/README.md)** - Complete setup and usage guide
-- **[Setup Guide](docs/user_guide/SETUP_GUIDE.md)** - Step-by-step installation instructions
-- **[Development Docs](docs/development/)** - Technical implementation details
-- **[API Documentation](docs/api/)** - API reference and examples
-
-## 🔧 Configuration
 
 Copy `env.example` to `.env` and configure your environment variables:
 
@@ -82,3 +75,12 @@ python -m pytest tests/
 - **Performance Metrics**: Analyze speed, power, mileage, and pricing
 - **Interactive UI**: User-friendly Streamlit interface
 
+
+## 🔗 Links
+
+- [Version History](version_history/) - Track project changes and updates
+- [Issue Tracker](https://github.com/HemanthVarmaKonduru/TextToSQLAgent/issues) - Report bugs and feature requests
+
+## 📄 License
+
+This project is licensed under the MIT License.
