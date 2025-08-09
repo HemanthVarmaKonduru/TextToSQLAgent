@@ -256,3 +256,14 @@ class DatabaseManager:
             "bikes": "Motorcycle Information - Contains comprehensive data about bikes including specifications, performance, features, pricing, and technical details."
         }
         return descriptions.get(database_type, "Unknown database") 
+
+    def get_fastest_bike(self) -> pd.DataFrame:
+        """Return the fastest bike based on numeric top_speed parsing."""
+        sql = (
+            "SELECT b.bike_name, br.brand_name, b.top_speed "
+            "FROM bikes b JOIN bike_brands br ON b.brand_id = br.brand_id "
+            "WHERE b.top_speed != '--' AND REGEXP_REPLACE(b.top_speed, '[^0-9]', '', 'g') != '' "
+            "ORDER BY CAST(REGEXP_REPLACE(b.top_speed, '[^0-9]', '', 'g') AS INTEGER) DESC "
+            "LIMIT 1;"
+        )
+        return self.execute_query(sql) 

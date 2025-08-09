@@ -168,15 +168,17 @@ SQL Generation Rules:
 7. Use LOWER() and LIKE for case-insensitive text searches
 8. Handle price comparisons carefully using REGEXP_REPLACE to extract numbers
 9. For engine capacity searches, use LIKE with patterns like '%1000%' or '%1000cc%'
-10. For top_speed/numeric comparisons, filter out '--' values: WHERE top_speed != '--' AND REGEXP_REPLACE(top_speed, '[^0-9]', '', 'g') != ''
+10. For top_speed/numeric comparisons, filter out '--' values: WHERE b.top_speed != '--' AND REGEXP_REPLACE(b.top_speed, '[^0-9\\.]', '', 'g') != ''
 11. Remember price and numeric columns are TEXT type, so use appropriate string functions
+12. If the user asks for the "fastest" bike or "highest top speed", ORDER BY CAST(NULLIF(REGEXP_REPLACE(b.top_speed, '[^0-9\\.]', '', 'g'), '') AS NUMERIC) DESC LIMIT 1, ensuring you filter out non-numeric values as in rule 10.
 
 Valid Bikes Query Examples:
 - "Show me all 1000CC bikes" -> SELECT b.bike_name, b.engine_capacity, b.max_power, b.price, b.top_speed FROM bikes b WHERE b.engine_capacity LIKE '%1000%' OR b.engine_capacity LIKE '%1000cc%' ORDER BY b.bike_name LIMIT 100;
 - "Find Ducati bikes" -> SELECT b.bike_name, b.engine_capacity, b.max_power, b.price, b.top_speed FROM bikes b JOIN bike_brands br ON b.brand_id = br.brand_id WHERE LOWER(br.brand_name) = 'ducati' ORDER BY b.bike_name LIMIT 100;
 - "Show bikes under 10 lakhs" -> SELECT b.bike_name, b.engine_capacity, b.price, b.max_power FROM bikes b WHERE b.price IS NOT NULL AND CAST(REGEXP_REPLACE(b.price, '[^0-9]', '', 'g') AS BIGINT) < 1000000 ORDER BY CAST(REGEXP_REPLACE(b.price, '[^0-9]', '', 'g') AS BIGINT) LIMIT 100;
 - "Which bikes have disc brakes?" -> SELECT b.bike_name, b.front_brake_type, b.rear_brake_type, b.price FROM bikes b WHERE LOWER(b.front_brake_type) LIKE '%disc%' OR LOWER(b.rear_brake_type) LIKE '%disc%' ORDER BY b.bike_name LIMIT 100;
-- "Show bikes with top speed over 200" -> SELECT b.bike_name, b.engine_capacity, b.top_speed, b.max_power, b.price FROM bikes b WHERE b.top_speed != '--' AND REGEXP_REPLACE(b.top_speed, '[^0-9]', '', 'g') != '' AND CAST(REGEXP_REPLACE(b.top_speed, '[^0-9]', '', 'g') AS INTEGER) > 200 ORDER BY CAST(REGEXP_REPLACE(b.top_speed, '[^0-9]', '', 'g') AS INTEGER) DESC LIMIT 100;
+- "Show bikes with top speed over 200" -> SELECT b.bike_name, b.engine_capacity, b.top_speed, b.max_power, b.price FROM bikes b WHERE b.top_speed != '--' AND REGEXP_REPLACE(b.top_speed, '[^0-9\\.]', '', 'g') != '' AND CAST(NULLIF(REGEXP_REPLACE(b.top_speed, '[^0-9\\.]', '', 'g'), '') AS NUMERIC) > 200 ORDER BY CAST(NULLIF(REGEXP_REPLACE(b.top_speed, '[^0-9\\.]', '', 'g'), '') AS NUMERIC) DESC LIMIT 100;
+- "Which is the fastest bike?" -> SELECT b.bike_name, br.brand_name, b.top_speed FROM bikes b JOIN bike_brands br ON b.brand_id = br.brand_id WHERE b.top_speed != '--' AND REGEXP_REPLACE(b.top_speed, '[^0-9\\.]', '', 'g') != '' ORDER BY CAST(NULLIF(REGEXP_REPLACE(b.top_speed, '[^0-9\\.]', '', 'g'), '') AS NUMERIC) DESC LIMIT 1;
 
 Invalid Questions (DO NOT ANSWER):
 - General knowledge questions (presidents, capitals, history)
