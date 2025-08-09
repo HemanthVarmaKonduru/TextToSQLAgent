@@ -167,10 +167,11 @@ SQL Generation Rules:
 6. Include ORDER BY when appropriate for meaningful results
 7. Use LOWER() and LIKE for case-insensitive text searches
 8. Handle price comparisons carefully using REGEXP_REPLACE to extract numbers
-9. For engine capacity searches, use LIKE with patterns like '%1000%' or '%1000cc%'
+9. For engine capacity comparisons (e.g., '> 1000 cc', '>= 1100cc', 'between 600 and 1000 cc'), parse numeric values: use REGEXP_REPLACE(b.engine_capacity, '[^0-9\\.]', '', 'g'), filter out empty strings, and CAST to NUMERIC for comparisons.
 10. For top_speed/numeric comparisons, filter out '--' values: WHERE b.top_speed != '--' AND REGEXP_REPLACE(b.top_speed, '[^0-9\\.]', '', 'g') != ''
 11. Remember price and numeric columns are TEXT type, so use appropriate string functions
 12. If the user asks for the "fastest" bike or "highest top speed", ORDER BY CAST(NULLIF(REGEXP_REPLACE(b.top_speed, '[^0-9\\.]', '', 'g'), '') AS NUMERIC) DESC LIMIT 1, ensuring you filter out non-numeric values as in rule 10.
+13. For features/specifications queries (e.g., "<brand> <model> features" or "specifications"), select key spec columns from bikes, joining brands when brand is provided. Example spec columns: b.engine_capacity, b.displacement, b.max_power, b.max_torque, b.top_speed, b.transmission, b.cylinders, b.abs_available, b.mileage, b.fuel_tank_capacity, b.kerb_weight, b.seat_height, b.front_brake_type, b.rear_brake_type, b.front_suspension, b.rear_suspension, b.price.
 
 Valid Bikes Query Examples:
 - "Show me all 1000CC bikes" -> SELECT b.bike_name, b.engine_capacity, b.max_power, b.price, b.top_speed FROM bikes b WHERE b.engine_capacity LIKE '%1000%' OR b.engine_capacity LIKE '%1000cc%' ORDER BY b.bike_name LIMIT 100;
@@ -179,6 +180,8 @@ Valid Bikes Query Examples:
 - "Which bikes have disc brakes?" -> SELECT b.bike_name, b.front_brake_type, b.rear_brake_type, b.price FROM bikes b WHERE LOWER(b.front_brake_type) LIKE '%disc%' OR LOWER(b.rear_brake_type) LIKE '%disc%' ORDER BY b.bike_name LIMIT 100;
 - "Show bikes with top speed over 200" -> SELECT b.bike_name, b.engine_capacity, b.top_speed, b.max_power, b.price FROM bikes b WHERE b.top_speed != '--' AND REGEXP_REPLACE(b.top_speed, '[^0-9\\.]', '', 'g') != '' AND CAST(NULLIF(REGEXP_REPLACE(b.top_speed, '[^0-9\\.]', '', 'g'), '') AS NUMERIC) > 200 ORDER BY CAST(NULLIF(REGEXP_REPLACE(b.top_speed, '[^0-9\\.]', '', 'g'), '') AS NUMERIC) DESC LIMIT 100;
 - "Which is the fastest bike?" -> SELECT b.bike_name, br.brand_name, b.top_speed FROM bikes b JOIN bike_brands br ON b.brand_id = br.brand_id WHERE b.top_speed != '--' AND REGEXP_REPLACE(b.top_speed, '[^0-9\\.]', '', 'g') != '' ORDER BY CAST(NULLIF(REGEXP_REPLACE(b.top_speed, '[^0-9\\.]', '', 'g'), '') AS NUMERIC) DESC LIMIT 1;
+- "Honda CBR1000RR-R Fireblade features" -> SELECT b.bike_name, br.brand_name, b.engine_capacity, b.displacement, b.max_power, b.max_torque, b.top_speed, b.transmission, b.cylinders, b.abs_available, b.mileage, b.fuel_tank_capacity, b.kerb_weight, b.seat_height, b.front_brake_type, b.rear_brake_type, b.front_suspension, b.rear_suspension, b.price FROM bikes b JOIN bike_brands br ON b.brand_id = br.brand_id WHERE LOWER(br.brand_name) = 'honda' AND LOWER(b.bike_name) LIKE '%cbr1000rr-r%' OR LOWER(b.bike_name) LIKE '%fireblade%' ORDER BY b.bike_name LIMIT 100;
+- "List Ducati bikes with engine capacity more than 1000cc" -> SELECT b.bike_name, br.brand_name, b.engine_capacity FROM bikes b JOIN bike_brands br ON b.brand_id = br.brand_id WHERE LOWER(br.brand_name) = 'ducati' AND REGEXP_REPLACE(b.engine_capacity, '[^0-9\\.]', '', 'g') != '' AND CAST(NULLIF(REGEXP_REPLACE(b.engine_capacity, '[^0-9\\.]', '', 'g'), '') AS NUMERIC) > 1000 ORDER BY CAST(NULLIF(REGEXP_REPLACE(b.engine_capacity, '[^0-9\\.]', '', 'g'), '') AS NUMERIC) DESC LIMIT 100;
 
 Invalid Questions (DO NOT ANSWER):
 - General knowledge questions (presidents, capitals, history)

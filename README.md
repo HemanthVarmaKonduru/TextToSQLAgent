@@ -76,11 +76,4 @@ python -m pytest tests/
 - **Interactive UI**: User-friendly Streamlit interface
 
 
-## 🔗 Links
 
-- [Version History](version_history/) - Track project changes and updates
-- [Issue Tracker](https://github.com/HemanthVarmaKonduru/TextToSQLAgent/issues) - Report bugs and feature requests
-
-## 📄 License
-
-This project is licensed under the MIT License.
