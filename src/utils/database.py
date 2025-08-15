@@ -14,19 +14,33 @@ logger = logging.getLogger(__name__)
 class DatabaseManager:
     """Manages database connections and operations for multiple domains."""
     
-    def __init__(self):
-        """Initialize the database manager."""
+    def __init__(self, connection_params: dict = None):
+        """
+        Initialize the database manager.
+        
+        Args:
+            connection_params: Optional dictionary with custom connection parameters
+                              Keys: 'host', 'port', 'database', 'user', 'password'
+        """
         self.current_database = "airlines"  # Default database
+        self.connection_params = connection_params or {}
         
     def get_connection(self) -> psycopg2.extensions.connection:
         """Get a database connection."""
         try:
+            # Use custom connection parameters if provided, otherwise use settings
+            host = self.connection_params.get('host', settings.DB_HOST)
+            port = self.connection_params.get('port', settings.DB_PORT)
+            user = self.connection_params.get('user', settings.DB_USER)
+            password = self.connection_params.get('password', settings.DB_PASSWORD)
+            database = self.connection_params.get('database', settings.DB_NAME)
+            
             conn = psycopg2.connect(
-                host=settings.DB_HOST,
-                port=settings.DB_PORT,
-                user=settings.DB_USER,
-                password=settings.DB_PASSWORD,
-                database=settings.DB_NAME
+                host=host,
+                port=port,
+                user=user,
+                password=password,
+                database=database
             )
             return conn
         except Exception as e:
@@ -155,35 +169,61 @@ class DatabaseManager:
         else:
             raise ValueError(f"Unsupported database type: {database_type}")
     
-    def get_sample_queries(self, database_type: str = None) -> List[str]:
-        """Get sample queries for the specified database type."""
+    def get_sample_queries(self, database_type: str = None) -> Dict[str, List[str]]:
+        """Get sample queries organized by difficulty level for the specified database type."""
         if database_type is None:
             database_type = self.current_database
             
         if database_type == "airlines":
-            return [
-                "Show me flights from Delhi to Mumbai",
-                "Find the cheapest flights under 5000 rupees",
-                "Which airlines fly to Bangalore?",
-                "Show me business class flights",
-                "What are the average prices by airline?",
-                "Find flights with no stops",
-                "Show me flights departing in the morning"
-            ]
+            return {
+                "Simple": [
+                    "Show me flights from Delhi to Mumbai",
+                    "Which airlines fly to Bangalore?",
+                    "Show me business class flights",
+                    "Find flights with no stops",
+                    "Show me flights departing in the morning"
+                ],
+                "Medium": [
+                    "Find the cheapest flights under 5000 rupees",
+                    "What are the average prices by airline?",
+                    "Show me flights from Delhi to Mumbai under 8000 rupees",
+                    "Which airlines have the most flights?",
+                    "Find flights with 1 stop between Delhi and Mumbai"
+                ],
+                "Hard": [
+                    "Compare flight prices between different airlines for Delhi-Mumbai route",
+                    "Find the most expensive and cheapest flights for each airline",
+                    "Show me flights with the best price-to-duration ratio",
+                    "Which cities have the most expensive average flight prices?",
+                    "Find airlines that operate both economy and business class flights"
+                ]
+            }
         elif database_type == "bikes":
-            return [
-                "Show me all 1000CC bikes",
-                "Find all Ducati bikes",
-                "Show me bikes under 10 lakhs",
-                "Which bikes have the best mileage?",
-                "Find the most powerful bikes",
-                "Show me electric bikes",
-                "Which bikes have disc brakes?",
-                "Show bikes with good fuel efficiency",
-                "Find bikes by engine capacity"
-            ]
+            return {
+                "Simple": [
+                    "Show me all 1000CC bikes",
+                    "Find all Ducati bikes",
+                    "Show me bikes under 10 lakhs",
+                    "Which bikes have disc brakes?",
+                    "Show bikes with good fuel efficiency"
+                ],
+                "Medium": [
+                    "Find the most powerful bikes",
+                    "Show me electric bikes",
+                    "Which bikes have the best mileage?",
+                    "Find bikes by engine capacity",
+                    "Show me bikes with ABS system"
+                ],
+                "Hard": [
+                    "Compare bikes by power-to-weight ratio",
+                    "Find the most fuel-efficient bikes in each price range",
+                    "Show me bikes with the best value for money (features vs price)",
+                    "Which brands offer the most variety in engine capacities?",
+                    "Find bikes with the highest top speed in each price category"
+                ]
+            }
         else:
-            return []
+            return {"Simple": [], "Medium": [], "Hard": []}
     
     def get_quick_stats(self, database_type: str = None) -> Dict[str, int]:
         """Get quick statistics for the specified database."""

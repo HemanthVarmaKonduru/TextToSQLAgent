@@ -16,12 +16,14 @@ logger = logging.getLogger(__name__)
 class TextToSQLAgent:
     """Main agent for converting natural language to SQL queries with multi-database support."""
     
-    def __init__(self, database_type: str = "airlines"):
+    def __init__(self, database_type: str = "airlines", connection_params: dict = None):
         """
         Initialize the Text-to-SQL agent.
         
         Args:
             database_type: The database type to use ("airlines" or "bikes")
+            connection_params: Optional dictionary with custom connection parameters
+                              Keys: 'host', 'port', 'database', 'user', 'password'
         """
         # Validate configuration
         if not settings.validate_config():
@@ -32,8 +34,8 @@ class TextToSQLAgent:
             api_key=settings.OPENAI_API_KEY
         )
         
-        # Initialize database manager
-        self.db_manager = DatabaseManager()
+        # Initialize database manager with connection parameters
+        self.db_manager = DatabaseManager(connection_params=connection_params)
         
         # Set initial database context
         self.set_database_context(database_type)
@@ -357,3 +359,41 @@ Provide a clear, concise analysis in 3-4 sentences."""
                 'visualizations': [],
                 'database_type': self.current_database
             } 
+    
+    def process_custom_sql(self, sql_query: str) -> Dict[str, Any]:
+        """Process a custom SQL query and return structured results with LLM analysis."""
+        try:
+            # Execute the custom SQL query
+            logger.info(f"Executing custom SQL query: {sql_query}")
+            df = self.execute_sql_query(sql_query)
+            
+            # Generate insights using LLM
+            logger.info("Generating insights for custom SQL...")
+            insights = self.generate_insights(df, f"Custom SQL: {sql_query}")
+            
+            # Suggest visualizations
+            logger.info("Suggesting visualizations for custom SQL...")
+            viz_suggestions = self.suggest_visualizations(df, f"Custom SQL: {sql_query}")
+            
+            return {
+                'success': True,
+                'sql_query': sql_query,
+                'data': df,
+                'insights': insights,
+                'visualizations': viz_suggestions,
+                'database_type': self.current_database,
+                'is_custom_sql': True
+            }
+            
+        except Exception as e:
+            logger.error(f"Error processing custom SQL: {e}")
+            return {
+                'success': False,
+                'error_type': 'custom_sql_error',
+                'insights': f"Error executing custom SQL query: {str(e)}",
+                'sql_query': sql_query,
+                'data': pd.DataFrame(),
+                'visualizations': [],
+                'database_type': self.current_database,
+                'is_custom_sql': True
+            }

@@ -1,0 +1,14 @@
+# Supabase Configuration
+SUPABASE_URL=your_supabase_project_url
+ANON_KEY=your_supabase_anon_key
+
+# Example:
+# SUPABASE_URL=https://xxxxxxxxxxx.supabase.co
+# ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Instructions:
+# 1. Create a Supabase project at https://supabase.com
+# 2. Go to Settings > API in your Supabase dashboard
+# 3. Copy your Project URL and anon public key
+# 4. Replace the values above with your actual credentials
+# 5. Set these as environment variables in your system
