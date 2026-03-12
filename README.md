@@ -1,79 +1,142 @@
-# 🏍️ Bikes TextToSQL Agent
+# Multi-Domain Text-to-SQL Agent
 
-A powerful natural language to SQL conversion agent specialized for motorcycle/bike data analysis, built with OpenAI API, PostgreSQL, and Streamlit.
+A natural language to SQL conversion platform that lets users query databases using plain English. Built with OpenAI GPT-4o, PostgreSQL, Supabase Auth, and Streamlit.
 
-## 🚀 Quick Start
+Supports **multiple domains** — currently Airlines and Bikes databases — with automatic schema detection, AI-powered insights, and interactive visualizations.
+
+## Features
+
+- **Natural Language Queries** — Ask questions in plain English, get SQL + results
+- **Multi-Database Support** — Switch between Airlines and Bikes datasets
+- **AI-Powered Insights** — GPT-4o analyzes query results and provides business insights
+- **Interactive Visualizations** — Auto-generated Plotly charts based on result data
+- **SQL Editor** — View, edit, and re-run generated SQL queries
+- **User Authentication** — Supabase Auth with email/password and Google OAuth
+- **Query History** — Track past queries within a session
+- **CSV Export** — Download query results as CSV files
+- **Sample Queries** — Pre-built queries organized by difficulty (basic, intermediate, advanced)
+
+## Architecture
+
+```
+┌──────────────┐     ┌──────────────────┐     ┌──────────────┐
+│   Streamlit  │────>│  Text-to-SQL     │────>│  PostgreSQL  │
+│   Frontend   │     │  Agent (GPT-4o)  │     │  Database    │
+│              │<────│                  │<────│              │
+└──────────────┘     └──────────────────┘     └──────────────┘
+       │                                             │
+       │              ┌──────────────┐               │
+       └─────────────>│  Supabase    │               │
+                      │  Auth        │               │
+                      └──────────────┘               │
+                      ┌──────────────┐               │
+                      │  Plotly       │<──────────────┘
+                      │  Viz Engine   │
+                      └──────────────┘
+```
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|-----------|
+| Frontend | Streamlit |
+| LLM | OpenAI GPT-4o-mini |
+| Database | PostgreSQL |
+| Auth | Supabase |
+| Visualization | Plotly |
+| Data Processing | Pandas, NumPy |
+| Language | Python 3.8+ |
+
+## Quick Start
+
+### Prerequisites
+- Python 3.8+
+- PostgreSQL server
+- OpenAI API key
+- Supabase project (for auth)
+
+### Setup
 
 ```bash
-# Install dependencies
+# Clone
+git clone https://github.com/HemanthVarmaKonduru/TextToSQLAgent.git
+cd TextToSQLAgent
+
+# Virtual environment
+python -m venv .venv
+source .venv/bin/activate
+
+# Dependencies
 pip install -r requirements.txt
 
-# Set up database
+# Environment
+cp env.example .env
+# Edit .env with your credentials
+```
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `OPENAI_API_KEY` | Yes | OpenAI API key |
+| `OPENAI_MODEL` | No | Model name (default: `gpt-4o-mini`) |
+| `DB_HOST` | Yes | PostgreSQL host |
+| `DB_PORT` | No | PostgreSQL port (default: `5432`) |
+| `DB_NAME` | Yes | Database name |
+| `DB_USER` | Yes | Database username |
+| `DB_PASSWORD` | Yes | Database password |
+| `SUPABASE_URL` | Yes | Supabase project URL |
+| `SUPABASE_ANON_KEY` | Yes | Supabase anonymous key |
+| `OAUTH_REDIRECT_URL` | No | OAuth redirect URL (default: `http://localhost:8501`) |
+
+### Run
+
+```bash
+# Set up database tables
 python database_setup.py
 
-# Run the application
+# Launch the app
 streamlit run app.py
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 TextToSQLAgent/
-├── src/                          # Source code
-│   ├── config/                   # Configuration management
-│   ├── core/                     # Core TextToSQL agent logic
-│   └── utils/                    # Utility functions
-├── tests/                        # Test files
-│   ├── unit/                     # Unit tests
-│   ├── integration/              # Integration tests
-│   └── performance/              # Performance tests
-├── docs/                         # Documentation
-│   ├── user_guide/               # User guides and setup
-│   ├── api/                      # API documentation
-│   └── development/              # Development documentation
-├── version_history/              # Version change logs
-├── data/                         # Data files
-├── logs/                         # Application logs
-└── config/                       # Configuration files
+├── app.py                     # Main Streamlit application
+├── login.py                   # Authentication page
+├── database_connection.py     # Database connection page
+├── auth_service.py            # Supabase auth wrapper
+├── database_setup.py          # Database initialization
+├── src/
+│   ├── config/settings.py     # Centralized configuration
+│   ├── core/text_to_sql_agent.py  # NLP-to-SQL conversion engine
+│   └── utils/
+│       ├── database.py        # Database operations & query execution
+│       └── visualization.py   # Plotly chart generation
+├── tests/
+│   ├── unit/                  # Unit tests
+│   └── integration/           # Integration tests
+├── docs/                      # Documentation
+├── data/                      # Sample data files
+├── requirements.txt
+├── env.example
+└── LICENSE
 ```
 
-
-
-Copy `env.example` to `.env` and configure your environment variables:
+## Testing
 
 ```bash
-# OpenAI Configuration
-OPENAI_API_KEY=your_openai_api_key_here
-OPENAI_MODEL=gpt-4o-mini
+# All tests
+python -m pytest tests/ -v
 
-# Database Configuration
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=bikes_database
-DB_USER=postgres
-DB_PASSWORD=your_database_password_here
+# Unit tests only
+python -m pytest tests/unit/ -v
+
+# Integration tests
+python -m pytest tests/integration/ -v
 ```
 
-## 🧪 Testing
+## License
 
-```bash
-# Run unit tests
-python -m pytest tests/unit/
-
-# Run integration tests
-python -m pytest tests/integration/
-
-# Run all tests
-python -m pytest tests/
-```
-
-## 📈 Features
-
-- **Natural Language to SQL**: Convert bike-related questions to SQL queries
-- **Data Analysis**: Generate insights and visualizations from query results
-- **Multi-Brand Support**: Query bikes from various manufacturers
-- **Performance Metrics**: Analyze speed, power, mileage, and pricing
-- **Interactive UI**: User-friendly Streamlit interface
-
-
-
+MIT License — see [LICENSE](LICENSE) for details.

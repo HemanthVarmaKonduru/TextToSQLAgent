@@ -109,7 +109,7 @@ class SupabaseAuth:
             response = self.supabase.auth.sign_in_with_oauth({
                 "provider": "google",
                 "options": {
-                    "redirect_to": "http://localhost:8501"  # Adjust based on your app URL
+                    "redirect_to": os.getenv("OAUTH_REDIRECT_URL", "http://localhost:8501")
                 }
             })
             
